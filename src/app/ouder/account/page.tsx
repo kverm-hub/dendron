@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import { KindForm } from "./kind-form";
+import { KindLoginKnop } from "./kind-login-knop";
 
 export default async function KindAccountPage() {
   const supabase = await createClient();
@@ -38,12 +39,15 @@ export default async function KindAccountPage() {
             {kinderen.map((k) => (
               <li
                 key={k.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-100 px-3.5 py-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3.5 py-3"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <Icon name="users" size={18} />
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <Icon name="users" size={18} />
+                  </div>
+                  <span className="text-sm font-medium text-slate-800">{k.full_name}</span>
                 </div>
-                <span className="text-sm font-medium text-slate-800">{k.full_name}</span>
+                <KindLoginKnop kindId={k.id} kindName={k.full_name} />
               </li>
             ))}
           </ul>

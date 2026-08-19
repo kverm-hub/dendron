@@ -18,12 +18,14 @@ export function NavShell({
   userName,
   roleLabel,
   accentClass,
+  navExtra,
 }: {
   children: React.ReactNode;
   navItems: NavItem[];
   userName: string;
   roleLabel: string;
   accentClass: string;
+  navExtra?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -72,6 +74,7 @@ export function NavShell({
               </Link>
             );
           })}
+          {navExtra}
         </nav>
 
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-4">
