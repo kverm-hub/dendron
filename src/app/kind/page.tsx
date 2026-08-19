@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import { PLANNING_TYPE_META } from "@/lib/planning";
+import { NotificatieBanner } from "@/components/notificatie-banner";
 import type { PlanningItem } from "@/lib/types";
 
 export default async function KindOverzicht() {
@@ -39,6 +40,8 @@ export default async function KindOverzicht() {
         </h1>
         <p className="mt-1 text-sm text-slate-500">Dit staat er voor je klaar.</p>
       </div>
+
+      <NotificatieBanner items={alle} />
 
       {eerstvolgendeToets && (
         <Card className="border-rose-100 bg-rose-50/60">

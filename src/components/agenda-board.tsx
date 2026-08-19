@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PLANNING_TYPE_META } from "@/lib/planning";
 import { maakPlanningItem, updatePlanningStatus, verwijderPlanningItem } from "@/lib/actions/planning";
-import type { PlanningItem, PlanningType, Subject } from "@/lib/types";
+import type { PlanningItem, PlanningType, Subject, TestType, ScheduleBlock } from "@/lib/types";
 
 function naarMaandagVanWeek(datum: Date) {
   const d = new Date(datum);
@@ -50,9 +50,13 @@ function formatDatumLabel(iso: string) {
 export function AgendaBoard({
   items,
   subjects,
+  testTypes,
+  scheduleBlocks,
 }: {
   items: PlanningItem[];
   subjects: Subject[];
+  testTypes: TestType[];
+  scheduleBlocks: ScheduleBlock[];
 }) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
@@ -83,6 +87,18 @@ export function AgendaBoard({
   }, [items, weekDagen]);
 
   function subjectNaam(id: string | null) {
+    if (!id) return null;
+    return subjects.find((s) => s.id === id)?.name ?? null;
+  }
+
+  function roosterVoorDag(dag: Date): ScheduleBlock[] {
+    const dagNum = dag.getDay();
+    return scheduleBlocks
+      .filter((b) => b.day_of_week === dagNum)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  }
+
+  function roosterSubjectNaam(id: string | null) {
     if (!id) return null;
     return subjects.find((s) => s.id === id)?.name ?? null;
   }
@@ -223,6 +239,25 @@ export function AgendaBoard({
               </div>
             )}
 
+            {type === "toets" && testTypes.length > 0 && (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Toetsvorm
+                </label>
+                <select
+                  name="testTypeId"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Algemeen (automatisch advies)</option>
+                  {testTypes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.study_sessions}x leren, {t.lead_days} dagen vooraf)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
                 {type === "toets" ? "Datum van de toets" : "Datum"}
@@ -290,7 +325,31 @@ export function AgendaBoard({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                {dagItems.length === 0 && (
+                {roosterVoorDag(dag).map((block) => {
+                  const isLes = block.block_type === "les";
+                  const isReis = block.block_type === "reis";
+                  const isPauze = block.block_type === "pauze";
+                  return (
+                    <div
+                      key={block.id}
+                      className={clsx(
+                        "rounded-md border px-2 py-1 text-[10px] leading-tight",
+                        isLes && "border-blue-200 bg-blue-50 text-blue-700",
+                        isReis && "border-slate-200 bg-slate-50 text-slate-500",
+                        isPauze && "border-amber-200 bg-amber-50 text-amber-600",
+                        block.block_type === "vrij" && "border-emerald-200 bg-emerald-50 text-emerald-600"
+                      )}
+                    >
+                      <span className="font-medium">
+                        {block.start_time.slice(0, 5)}-{block.end_time.slice(0, 5)}
+                      </span>
+                      {" "}
+                      {block.label || roosterSubjectNaam(block.subject_id) || (isPauze ? "Pauze" : isReis ? "Reizen" : block.block_type)}
+                    </div>
+                  );
+                })}
+
+                {dagItems.length === 0 && roosterVoorDag(dag).length === 0 && (
                   <p className="pt-2 text-center text-xs text-slate-300">-</p>
                 )}
                 {dagItems.map((item) => {
@@ -376,12 +435,33 @@ export function AgendaBoard({
               <p className="mb-2 text-sm font-medium capitalize text-slate-500">
                 {formatDatumLabel(iso)}
               </p>
-              {dagItems.length === 0 ? (
+              {dagItems.length === 0 && roosterVoorDag(dag).length === 0 ? (
                 <Card className="py-3">
                   <p className="text-sm text-slate-400">Niets gepland.</p>
                 </Card>
               ) : (
                 <div className="flex flex-col gap-2">
+                  {roosterVoorDag(dag).map((block) => {
+                    const isLes = block.block_type === "les";
+                    const isReis = block.block_type === "reis";
+                    const isPauze = block.block_type === "pauze";
+                    return (
+                      <Card key={block.id} className={clsx(
+                        "flex items-center gap-3 py-2.5",
+                        isLes && "border-blue-100 bg-blue-50/40",
+                        isReis && "border-slate-100 bg-slate-50/40",
+                        isPauze && "border-amber-100 bg-amber-50/40",
+                        block.block_type === "vrij" && "border-emerald-100 bg-emerald-50/40"
+                      )}>
+                        <span className="text-xs font-medium text-slate-500">
+                          {block.start_time.slice(0, 5)}-{block.end_time.slice(0, 5)}
+                        </span>
+                        <span className="text-sm text-slate-600">
+                          {block.label || roosterSubjectNaam(block.subject_id) || (isPauze ? "Pauze" : isReis ? "Reizen" : block.block_type)}
+                        </span>
+                      </Card>
+                    );
+                  })}
                   {dagItems.map((item) => {
                     const meta = PLANNING_TYPE_META[item.type];
                     const isVoorstel = item.status === "voorstel";

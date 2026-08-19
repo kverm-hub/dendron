@@ -31,14 +31,27 @@ export async function maakPlanningItem(formData: FormData) {
   const dueDate = String(formData.get("dueDate") || "");
   const subjectId = String(formData.get("subjectId") || "") || null;
   const description = String(formData.get("description") || "").trim();
+  const testTypeId = String(formData.get("testTypeId") || "") || null;
 
   if (!title || !dueDate) return { error: "Vul een titel en datum in." };
+
+  // Als er een toetsvorm is gekozen, haal het studie-advies op
+  let studySessions: number | undefined;
+  if (testTypeId) {
+    const { data: toetsvorm } = await supabase
+      .from("test_types")
+      .select("study_sessions, lead_days")
+      .eq("id", testTypeId)
+      .single();
+    if (toetsvorm) studySessions = toetsvorm.study_sessions;
+  }
 
   const { data: nieuwItem, error } = await supabase
     .from("planning_items")
     .insert({
       family_id: profile.family_id,
       subject_id: subjectId,
+      test_type_id: testTypeId,
       type,
       title,
       description,
@@ -54,7 +67,7 @@ export async function maakPlanningItem(formData: FormData) {
   // Bij een toets: meteen gespreide leermomenten voorstellen, zodat leren
   // in delen gebeurt in plaats van pas op het laatste moment.
   if (type === "toets" && nieuwItem) {
-    const voorstellen = stelLeermomentenVoor(new Date(), new Date(dueDate));
+    const voorstellen = stelLeermomentenVoor(new Date(), new Date(dueDate), studySessions);
     if (voorstellen.length > 0) {
       await supabase.from("planning_items").insert(
         voorstellen.map((v) => ({

@@ -6,7 +6,9 @@ import { NavKindLogin } from "@/components/nav-kind-login";
 const NAV_ITEMS = [
   { href: "/ouder", label: "Overzicht", icon: "dashboard" },
   { href: "/ouder/agenda", label: "Agenda", icon: "calendar" },
+  { href: "/ouder/rooster", label: "Rooster", icon: "calendar" },
   { href: "/ouder/vakken", label: "Vakken & lesstof", icon: "book-open" },
+  { href: "/ouder/toetsvormen", label: "Toetsvormen", icon: "alert-circle" },
   { href: "/ouder/account", label: "Kind-account", icon: "users" },
 ];
 

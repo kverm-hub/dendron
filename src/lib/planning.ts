@@ -46,8 +46,15 @@ function toDateOnly(date: Date) {
  * Hoe dichter bij de toets, hoe korter de tussenpozen (spaced repetition-achtig).
  * Dit zijn altijd voorstellen ("voorstel"-status) - de leerling past ze samen
  * met een ouder aan naar wat past naast ander huiswerk.
+ *
+ * Als studySessions is opgegeven (vanuit een toetsvorm), wordt dat aantal
+ * aangehouden. Anders wordt het automatisch bepaald op basis van beschikbare dagen.
  */
-export function stelLeermomentenVoor(vandaag: Date, toetsDatum: Date) {
+export function stelLeermomentenVoor(
+  vandaag: Date,
+  toetsDatum: Date,
+  studySessions?: number
+) {
   const dagenBeschikbaar = Math.floor(
     (toetsDatum.getTime() - vandaag.getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -55,10 +62,18 @@ export function stelLeermomentenVoor(vandaag: Date, toetsDatum: Date) {
   if (dagenBeschikbaar < 2) return [];
 
   let aantalMomenten: number;
-  if (dagenBeschikbaar >= 14) aantalMomenten = 4;
-  else if (dagenBeschikbaar >= 7) aantalMomenten = 3;
-  else if (dagenBeschikbaar >= 4) aantalMomenten = 2;
-  else aantalMomenten = 1;
+  if (studySessions && studySessions > 0) {
+    aantalMomenten = Math.min(studySessions, 6);
+  } else {
+    if (dagenBeschikbaar >= 14) aantalMomenten = 4;
+    else if (dagenBeschikbaar >= 7) aantalMomenten = 3;
+    else if (dagenBeschikbaar >= 4) aantalMomenten = 2;
+    else aantalMomenten = 1;
+  }
+
+  if (aantalMomenten > dagenBeschikbaar) {
+    aantalMomenten = Math.max(1, dagenBeschikbaar);
+  }
 
   // Verhoudingen binnen het beschikbare interval, ingeplande momenten liggen
   // dichter bij elkaar naarmate de toets nadert.

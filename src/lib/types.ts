@@ -45,6 +45,7 @@ export interface PlanningItem {
   family_id: string;
   subject_id: string | null;
   parent_item_id: string | null;
+  test_type_id: string | null;
   type: PlanningType;
   title: string;
   description: string;
@@ -62,5 +63,28 @@ export interface ChatMessage {
   user_id: string;
   role: "user" | "model";
   content: string;
+  created_at: string;
+}
+
+export interface TestType {
+  id: string;
+  family_id: string;
+  name: string;
+  color: string;
+  study_sessions: number;
+  lead_days: number;
+  description: string;
+  created_at: string;
+}
+
+export interface ScheduleBlock {
+  id: string;
+  schedule_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  block_type: "les" | "pauze" | "reis" | "vrij";
+  subject_id: string | null;
+  label: string;
   created_at: string;
 }

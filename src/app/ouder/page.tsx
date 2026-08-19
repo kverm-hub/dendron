@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
 import { PLANNING_TYPE_META } from "@/lib/planning";
+import { NotificatieBanner } from "@/components/notificatie-banner";
+import type { PlanningItem } from "@/lib/types";
 
 export default async function OuderOverzicht() {
   const supabase = await createClient();
@@ -25,7 +27,7 @@ export default async function OuderOverzicht() {
     .eq("family_id", profile!.family_id)
     .order("due_date", { ascending: true });
 
-  const alle = items ?? [];
+  const alle: PlanningItem[] = items ?? [];
   const open = alle.filter((i) => i.status !== "klaar");
   const teLaat = open.filter((i) => i.due_date < vandaag);
   const komendeWeek = open.filter((i) => i.due_date >= vandaag && i.due_date <= overWeek);
@@ -40,6 +42,8 @@ export default async function OuderOverzicht() {
           Zo staat de planning van je kind ervoor.
         </p>
       </div>
+
+      <NotificatieBanner items={alle} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Te laat" value={teLaat.length} tone="rose" icon="alert-circle" />
