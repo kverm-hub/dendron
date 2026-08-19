@@ -43,11 +43,18 @@ export async function updateSession(request: NextRequest) {
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     const url = request.nextUrl.clone();
     url.pathname = profile?.role === "kind" ? "/kind" : "/ouder";
-    return NextResponse.redirect(url);
+
+    // Kopieer vernieuwde sessie-cookies naar de redirect-response,
+    // anders raakt de browser ze kwijt en is de sessie na redirect verlopen.
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
+      redirectResponse.cookies.set(name, value);
+    });
+    return redirectResponse;
   }
 
   // Rolbescherming: een kind mag niet bij /ouder en andersom.
@@ -56,13 +63,18 @@ export async function updateSession(request: NextRequest) {
       .from("profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     const expectedPrefix = profile?.role === "kind" ? "/kind" : "/ouder";
     if (!path.startsWith(expectedPrefix)) {
       const url = request.nextUrl.clone();
       url.pathname = expectedPrefix;
-      return NextResponse.redirect(url);
+
+      const redirectResponse = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
+        redirectResponse.cookies.set(name, value);
+      });
+      return redirectResponse;
     }
   }
 
