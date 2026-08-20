@@ -4,7 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/registreren", "/auth"];
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  // Verzamel cookies die Supabase tijdens deze request wil setten,
+  // zodat we ze op zowel een pass-through als een redirect-response kunnen toepassen.
+  const cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,12 +16,11 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+        setAll(setCookies) {
+          setCookies.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            cookiesToSet.push({ name, value, options });
+          });
         },
       },
     }
@@ -32,10 +33,17 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p)) || path === "/";
 
+  function applyCookies(response: NextResponse) {
+    for (const { name, value, options } of cookiesToSet) {
+      response.cookies.set(name, value, options as Record<string, unknown> | undefined);
+    }
+    return response;
+  }
+
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return applyCookies(NextResponse.redirect(url));
   }
 
   if (user && (path === "/login" || path === "/registreren" || path === "/")) {
@@ -47,17 +55,9 @@ export async function updateSession(request: NextRequest) {
 
     const url = request.nextUrl.clone();
     url.pathname = profile?.role === "kind" ? "/kind" : "/ouder";
-
-    // Kopieer vernieuwde sessie-cookies naar de redirect-response,
-    // anders raakt de browser ze kwijt en is de sessie na redirect verlopen.
-    const redirectResponse = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
-      redirectResponse.cookies.set(name, value);
-    });
-    return redirectResponse;
+    return applyCookies(NextResponse.redirect(url));
   }
 
-  // Rolbescherming: een kind mag niet bij /ouder en andersom.
   if (user && (path.startsWith("/ouder") || path.startsWith("/kind"))) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -69,14 +69,9 @@ export async function updateSession(request: NextRequest) {
     if (!path.startsWith(expectedPrefix)) {
       const url = request.nextUrl.clone();
       url.pathname = expectedPrefix;
-
-      const redirectResponse = NextResponse.redirect(url);
-      supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
-        redirectResponse.cookies.set(name, value);
-      });
-      return redirectResponse;
+      return applyCookies(NextResponse.redirect(url));
     }
   }
 
-  return supabaseResponse;
+  return applyCookies(NextResponse.next({ request }));
 }
