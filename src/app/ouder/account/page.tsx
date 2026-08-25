@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
+import { ChatgeschiedenisOpschonenKnop } from "@/components/chatgeschiedenis-opschonen-knop";
 import { KindForm } from "./kind-form";
-import { KindLoginKnop } from "./kind-login-knop";
+import { KindBewerkKnop } from "./kind-bewerk-knop";
 
 export default async function KindAccountPage() {
   const supabase = await createClient();
@@ -23,6 +25,17 @@ export default async function KindAccountPage() {
     .eq("role", "kind")
     .order("created_at", { ascending: true });
 
+  // E-mailadres staat niet in profiles (dat kent alleen auth.users) - alleen
+  // nodig om het bewerk-formulier voor te vullen, dus via de admin-client.
+  const emailPerKind = new Map<string, string>();
+  if (kinderen && kinderen.length > 0) {
+    const admin = createAdminClient();
+    const resultaten = await Promise.all(kinderen.map((k) => admin.auth.admin.getUserById(k.id)));
+    resultaten.forEach((res, i) => {
+      if (res.data.user?.email) emailPerKind.set(kinderen[i].id, res.data.user.email);
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -39,15 +52,18 @@ export default async function KindAccountPage() {
             {kinderen.map((k) => (
               <li
                 key={k.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3.5 py-3"
+                className="flex items-center gap-3 rounded-xl border border-slate-100 px-3.5 py-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <Icon name="users" size={18} />
-                  </div>
-                  <span className="text-sm font-medium text-slate-800">{k.full_name}</span>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Icon name="users" size={18} />
                 </div>
-                <KindLoginKnop kindId={k.id} kindName={k.full_name} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-800">{k.full_name}</p>
+                  {emailPerKind.get(k.id) && (
+                    <p className="truncate text-xs text-slate-500">{emailPerKind.get(k.id)}</p>
+                  )}
+                </div>
+                <KindBewerkKnop kindId={k.id} huidigeNaam={k.full_name} huidigeEmail={emailPerKind.get(k.id) ?? ""} />
               </li>
             ))}
           </ul>
@@ -55,6 +71,17 @@ export default async function KindAccountPage() {
       )}
 
       <KindForm />
+
+      <Card className="flex flex-col gap-2">
+        <h2 className="text-base font-semibold text-slate-900">Chatgeschiedenis</h2>
+        <p className="text-sm text-slate-500">
+          De inhoud van alle chats (vakdocent, opdracht maken, planningshulp en overhoor-gesprekken) blijft bewaard
+          zolang de huidige roosterperiode loopt. Is een periode voorbij, dan mag je die geschiedenis opschonen.
+        </p>
+        <div className="mt-1">
+          <ChatgeschiedenisOpschonenKnop />
+        </div>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AgendaBoard } from "@/components/agenda-board";
+import type { DagInstelling } from "@/lib/types";
 
 export default async function KindAgendaPage() {
   const supabase = await createClient();
@@ -12,7 +13,17 @@ export default async function KindAgendaPage() {
     .eq("id", user!.id)
     .single();
 
-  const [{ data: items }, { data: subjects }, { data: testTypes }] = await Promise.all([
+  const [
+    { data: items },
+    { data: subjects },
+    { data: testTypes },
+    { data: periodes },
+    { data: roosterItems },
+    { data: uitzonderingen },
+    { data: family },
+    { data: jaarEvents },
+    { data: dagInstellingen },
+  ] = await Promise.all([
     supabase
       .from("planning_items")
       .select("*")
@@ -20,32 +31,26 @@ export default async function KindAgendaPage() {
       .order("due_date", { ascending: true }),
     supabase.from("subjects").select("*").eq("family_id", profile!.family_id),
     supabase.from("test_types").select("*").eq("family_id", profile!.family_id),
+    supabase.from("rooster_periodes").select("*").eq("family_id", profile!.family_id),
+    supabase.from("rooster_items").select("*").eq("family_id", profile!.family_id),
+    supabase.from("rooster_uitzonderingen").select("*").eq("family_id", profile!.family_id),
+    supabase.from("families").select("*").eq("id", profile!.family_id).single(),
+    supabase.from("jaar_events").select("*").eq("family_id", profile!.family_id),
+    supabase.from("dag_instellingen").select("*").eq("family_id", profile!.family_id),
   ]);
-
-  const { data: schedule } = await supabase
-    .from("schedules")
-    .select("id")
-    .eq("family_id", profile!.family_id)
-    .maybeSingle();
-
-  let scheduleBlocks: import("@/lib/types").ScheduleBlock[] = [];
-
-  if (schedule) {
-    const { data: blocks } = await supabase
-      .from("schedule_blocks")
-      .select("*")
-      .eq("schedule_id", schedule.id)
-      .order("day_of_week", { ascending: true })
-      .order("start_time", { ascending: true });
-    scheduleBlocks = (blocks ?? []) as import("@/lib/types").ScheduleBlock[];
-  }
 
   return (
     <AgendaBoard
       items={items ?? []}
       subjects={subjects ?? []}
       testTypes={testTypes ?? []}
-      scheduleBlocks={scheduleBlocks}
+      periodes={periodes ?? []}
+      roosterItems={roosterItems ?? []}
+      uitzonderingen={uitzonderingen ?? []}
+      reistijdMinuten={family?.reistijd_minuten ?? 15}
+      dagInstellingen={(dagInstellingen ?? []) as DagInstelling[]}
+      jaarEvents={jaarEvents ?? []}
+      voorKind
     />
   );
 }

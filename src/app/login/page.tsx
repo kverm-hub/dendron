@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Icon } from "@/components/icon";
+import { Logo } from "@/components/logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,10 +38,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
-            <Icon name="book-open" size={26} />
-          </div>
-          <h1 className="text-xl font-semibold text-slate-900">Inloggen</h1>
+          <Logo size="lg" withWordmark={false} className="mb-3" />
+          <p className="font-heading text-2xl font-bold text-slate-900">Dendron</p>
+          <h1 className="mt-2 text-base font-medium text-slate-700">Inloggen</h1>
           <p className="mt-1 text-sm text-slate-500">Log in met je e-mailadres en wachtwoord.</p>
         </div>
 
@@ -56,7 +55,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
               />
             </div>
             <div>
@@ -68,13 +67,13 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
               />
             </div>
 
             {error && <p className="text-sm text-rose-600">{error}</p>}
 
-            <Button type="submit" size="lg" disabled={loading} className="mt-2 w-full">
+            <Button type="submit" size="lg" loading={loading} className="mt-2 w-full">
               {loading ? "Bezig..." : "Inloggen"}
             </Button>
           </form>
@@ -82,7 +81,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-slate-500">
           Nog geen ouder-account?{" "}
-          <Link href="/registreren" className="font-medium text-blue-600 hover:underline">
+          <Link href="/registreren" className="font-medium text-accent-600 hover:underline">
             Account aanmaken
           </Link>
         </p>

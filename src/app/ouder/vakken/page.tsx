@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/icon";
+import { vakKleur } from "@/lib/vak-kleur";
 import { VakForm } from "./vak-form";
 
 export default async function VakkenPage() {
@@ -42,21 +43,31 @@ export default async function VakkenPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {subjects?.map((s) => (
+        {subjects?.map((s) => {
+          const kleur = vakKleur(s.id);
+          return (
           <Link key={s.id} href={`/ouder/vakken/${s.id}`}>
             <Card className="flex h-full items-center gap-3 transition-shadow hover:shadow-md">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${kleur.bg} ${kleur.text}`}>
                 <Icon name={s.icon} size={20} />
               </span>
               <div>
-                <p className="text-sm font-semibold text-slate-900">{s.name}</p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                  {s.name}
+                  {s.code && (
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-500">
+                      {s.code}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-slate-500">
                   {(s.materials as unknown as { count: number }[])?.[0]?.count ?? 0} stuk(s) lesstof
                 </p>
               </div>
             </Card>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
